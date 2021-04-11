@@ -25,25 +25,32 @@ void trace_program(FILE *trace, BTB_entry btb[MAX_BTB_SIZE]) {
             // right prediction?
             // check if prediction is taken or not
             if (btb[BTB_INDEX(PC_current)].pred == 0b00 || btb[BTB_INDEX(PC_current)].pred == 0b01) {
-                change_prediction_bits(TAKEN, &btb[BTB_INDEX(PC_current)]);
                 if (btb[BTB_INDEX(PC_current)].target == PC_next) {
+                    change_prediction_bits(TAKEN, &btb[BTB_INDEX(PC_current)]);
+                    //prediction_A(NOT_TAKEN, &btb[BTB_INDEX(PC_current)]);
                     // right
                     right++;
                     taken++;
                 } else {
+                    change_prediction_bits(NOT_TAKEN, &btb[BTB_INDEX(PC_current)]);
+                    //prediction_A(NOT_TAKEN, &btb[BTB_INDEX(PC_current)]);
                     // wrong
                     wrong++;
                     if (PC_next != PC_current + 4) {
                         wrong_addr++;
                         taken++;
+                        change_prediction_bits(TAKEN, &btb[BTB_INDEX(PC_current)]);
                         btb[BTB_INDEX(PC_current)].target = PC_next; // update BTB
                     }
                 }
             } else { // not taken, 0b10 or 0b11
-                change_prediction_bits(NOT_TAKEN, &btb[BTB_INDEX(PC_current)]);
                 if (PC_next == PC_current + 4) {
+                    change_prediction_bits(NOT_TAKEN, &btb[BTB_INDEX(PC_current)]);
+                    //prediction_A(NOT_TAKEN, &btb[BTB_INDEX(PC_current)]);
                     right++;
                 } else {
+                    change_prediction_bits(TAKEN, &btb[BTB_INDEX(PC_current)]);
+                    //prediction_A(NOT_TAKEN, &btb[BTB_INDEX(PC_current)]);
                     wrong++;
                     taken++;
                     btb[BTB_INDEX(PC_current)].target = PC_next; // update BTB
@@ -102,12 +109,14 @@ void print_btb(BTB_entry btb[]) {
     printf("entry:\tPC:\ttarget:\tPred.:\n");
     for (int i = 0; i < MAX_BTB_SIZE; i++) {
         if (btb[i].target != 0) {
-            printf("%d\t%x\t%x\t%x\n", i, btb[i].pc, btb[i].target, btb[i].pred);
+            printf("%d\t%x\t%x\t", i, btb[i].pc, btb[i].target);
+            print_binary(btb[i].pred);
+            printf("\n");
         }
     }
 }
 
-// assumes default state machine
+// assumes default (class) state machine
 void change_prediction_bits(int taken, BTB_entry *entry) {
     if (taken == TAKEN) {
         switch(entry->pred) {
@@ -139,5 +148,57 @@ void change_prediction_bits(int taken, BTB_entry *entry) {
                 // no change
                 break;
         }
+    }
+}
+
+void prediction_A(int taken, BTB_entry *entry) {
+    if (taken == TAKEN) {
+        switch(entry->pred) {
+            case 0b00:
+                // no change
+                break;
+            case 0b01:
+                entry->pred = 0b00;
+                break;
+            case 0b10:
+                entry->pred = 0b01;
+                break;
+            case 0b11:
+                entry->pred = 0b10;
+                break;
+        }
+    } else if (taken == NOT_TAKEN) {
+        switch(entry->pred) {
+            case 0b00:
+                entry->pred = 0b01;
+                break;
+            case 0b01:
+                entry->pred = 0b11;
+                break;
+            case 0b10:
+                entry->pred = 0b11;
+                break;
+            case 0b11:
+                // no change
+                break;
+        }
+    }
+}
+
+// This could be done algorithmically, but this is faster
+void print_binary(int bin_num) {
+    switch (bin_num) {
+        case 0b00:
+            printf("00");
+            break;
+        case 0b01:
+            printf("01");
+            break;
+        case 0b10:
+            printf("10");
+            break;
+        case 0b11:
+            printf("11");
+            break;
     }
 }

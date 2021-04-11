@@ -25,5 +25,7 @@ void read_next(FILE *trace, uint32_t *next);
 int calculate_btb_index(uint32_t address);
 void print_btb(BTB_entry btb[]);
 void change_prediction_bits(int taken, BTB_entry *entry);
+void prediction_A(int taken, BTB_entry *entry);
+void print_binary(int bin_num);
 
 #endif
