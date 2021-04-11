@@ -27,5 +27,6 @@ void print_btb(BTB_entry btb[]);
 void change_prediction_bits(int taken, BTB_entry *entry);
 void prediction_A(int taken, BTB_entry *entry);
 void print_binary(int bin_num);
+void write_stats_to_outfile(int hit, int miss, int right, int wrong, int wrong_addr, int collision, int taken);
 
 #endif

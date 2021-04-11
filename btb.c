@@ -74,7 +74,7 @@ void trace_program(FILE *trace, BTB_entry btb[MAX_BTB_SIZE]) {
         }
         move_to_next_PC(trace, &PC_current, &PC_next);
     }
-
+    write_stats_to_outfile(hit, miss, right, wrong, wrong_addr, collision, taken);
 }
 
 void add_btb_entry(BTB_entry btb[], uint32_t PC_current, uint32_t PC_next) {
@@ -200,5 +200,18 @@ void print_binary(int bin_num) {
         case 0b11:
             printf("11");
             break;
+    }
+}
+
+void write_stats_to_outfile(int hit, int miss, int right, int wrong, int wrong_addr, int collision, int taken) {
+    FILE *outfile = fopen("stats.txt", "w");
+    if (outfile != NULL) {
+        double hit_rate = (double) hit / (hit + miss);
+        fprintf(outfile, "Hit Rate: %lf%%\n", hit_rate * 100);
+        double accuracy = (double) right / hit;
+        fprintf(outfile, "Accuracy: %lf%%\n", accuracy * 100);
+        double incorrect_address = (double) wrong_addr / wrong;
+        fprintf(outfile, "Incorrect addr: %lf%%\n", incorrect_address * 100);
+        fclose(outfile);
     }
 }

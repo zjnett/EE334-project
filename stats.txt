@@ -1,0 +1,3 @@
+Hit Rate: 92.460497%
+Accuracy: 93.798828%
+Incorrect addr: 66.929134%
