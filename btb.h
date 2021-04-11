@@ -6,8 +6,8 @@
 #define MAX_BTB_SIZE 1024
 #define BTB_INDEX(x) (x & 0xFFC) >> 2
 
-#define TAKEN 0b00
-#define NOT_TAKEN 0b10
+#define TAKEN 1
+#define NOT_TAKEN 0
 
 typedef struct _BTB_entry {
     uint32_t pc;
@@ -24,5 +24,6 @@ void read_address(FILE *trace, uint32_t *address);
 void read_next(FILE *trace, uint32_t *next);
 int calculate_btb_index(uint32_t address);
 void print_btb(BTB_entry btb[]);
+void change_prediction_bits(int taken, BTB_entry *entry);
 
 #endif

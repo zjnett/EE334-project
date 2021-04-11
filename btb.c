@@ -18,31 +18,35 @@ void trace_program(FILE *trace, BTB_entry btb[MAX_BTB_SIZE]) {
     while (!feof(trace)) {
         // Stage 1 (IF)
         // is PC_current in BTB?
-        if (btb[BTB_INDEX(PC_current)].target != 0) {
+        if (btb[BTB_INDEX(PC_current)].target != 0 && btb[BTB_INDEX(PC_current)].pc == PC_current) {
             // PC current is in BTB
             hit++;
             // Stage 2
             // right prediction?
             // check if prediction is taken or not
-            if (btb[BTB_INDEX(PC_current)].pred == TAKEN) {
+            if (btb[BTB_INDEX(PC_current)].pred == 0b00 || btb[BTB_INDEX(PC_current)].pred == 0b01) {
+                change_prediction_bits(TAKEN, &btb[BTB_INDEX(PC_current)]);
                 if (btb[BTB_INDEX(PC_current)].target == PC_next) {
                     // right
                     right++;
                     taken++;
-                    if (PC_next != PC_current + 4) {
-                        wrong_addr++;
-                        taken++;
-                    }
                 } else {
                     // wrong
                     wrong++;
+                    if (PC_next != PC_current + 4) {
+                        wrong_addr++;
+                        taken++;
+                        btb[BTB_INDEX(PC_current)].target = PC_next; // update BTB
+                    }
                 }
-            } else if (btb[BTB_INDEX(PC_current)].pred == NOT_TAKEN) {
+            } else { // not taken, 0b10 or 0b11
+                change_prediction_bits(NOT_TAKEN, &btb[BTB_INDEX(PC_current)]);
                 if (PC_next == PC_current + 4) {
                     right++;
                 } else {
                     wrong++;
                     taken++;
+                    btb[BTB_INDEX(PC_current)].target = PC_next; // update BTB
                 }
             }
         } else {
@@ -54,6 +58,8 @@ void trace_program(FILE *trace, BTB_entry btb[MAX_BTB_SIZE]) {
                 miss++;
                 taken++;
                 // add current PC and next PC to BTB
+                if (btb[BTB_INDEX(PC_current)].pc != 0)
+                    collision++;
                 add_btb_entry(btb, PC_current, PC_next);
             } else {
                 // normal program execution
@@ -97,6 +103,41 @@ void print_btb(BTB_entry btb[]) {
     for (int i = 0; i < MAX_BTB_SIZE; i++) {
         if (btb[i].target != 0) {
             printf("%d\t%x\t%x\t%x\n", i, btb[i].pc, btb[i].target, btb[i].pred);
+        }
+    }
+}
+
+// assumes default state machine
+void change_prediction_bits(int taken, BTB_entry *entry) {
+    if (taken == TAKEN) {
+        switch(entry->pred) {
+            case 0b00:
+                // no change
+                break;
+            case 0b01:
+                entry->pred = 0b00;
+                break;
+            case 0b10:
+                entry->pred = 0b01;
+                break;
+            case 0b11:
+                entry->pred = 0b10;
+                break;
+        }
+    } else if (taken == NOT_TAKEN) {
+        switch(entry->pred) {
+            case 0b00:
+                entry->pred = 0b01;
+                break;
+            case 0b01:
+                entry->pred = 0b10;
+                break;
+            case 0b10:
+                entry->pred = 0b11;
+                break;
+            case 0b11:
+                // no change
+                break;
         }
     }
 }
